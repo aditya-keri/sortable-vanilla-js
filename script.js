@@ -19,9 +19,18 @@ const richestPeople = [
 
 const listItems = [];
 
+const EVENT_HANDLER_MAPPING = {
+  dragstart: dragStart,
+  dragover: dragOver,
+  drop: dragDrop,
+  dragenter: dragEnter,
+  dragleave: dragLeave,
+};
+
 let dragStartIndex;
 
 function createList() {
+  const documentFragment = new DocumentFragment();
   [...richestPeople]
     .map((person) => ({ value: person, sort: Math.random() }))
     .sort((a, b) => a.sort - b.sort)
@@ -38,50 +47,46 @@ function createList() {
         </div>
         `;
       listItems.push(listItem);
-      draggable_list.appendChild(listItem);
+      documentFragment.appendChild(listItem);
     });
+    draggable_list.appendChild(documentFragment);
   addEventListeners();
 }
-
-// 1. Create a document fragment
-// 2. Loop through and append listItem to document fragment
-// 3. Append this document fragment to ul
 
 createList();
 
 function addEventListeners() {
-  const draggables = document.querySelectorAll(".draggable");
-  const dragListItems = document.querySelectorAll(".draggable-list li");
-
-  draggables.forEach((draggable) => {
-    draggable.addEventListener("dragstart", dragStart);
-  });
-
-  dragListItems.forEach((item) => {
-    item.addEventListener("dragover", dragOver);
-    item.addEventListener("drop", dragDrop);
-    item.addEventListener("dragenter", dragEnter);
-    item.addEventListener("dragleave", dragLeave);
-  });
+  for (const event in EVENT_HANDLER_MAPPING) {
+    if (Object.hasOwnProperty.call(EVENT_HANDLER_MAPPING, event)) {
+      const eventHandler = EVENT_HANDLER_MAPPING[event];
+      draggable_list.addEventListener(event, eventHandler);
+    }
+  }
 }
 
-function dragEnter() {
-  this.classList.add('over');
+/*
+The event object that we get in the following events will ALWAYS be the div with
+the class name of "draggable". Because only this div has the attribute draggable = true.
+So we need to get the closest li element from this div and update accordingly.
+*/
+
+function dragEnter(e) {
+  e.target.closest('li').classList.add('over');
 }
 
-function dragLeave() {
-  this.classList.remove('over');
+function dragLeave(e) {
+  e.target.closest('li').classList.remove('over');
 }
 
-function dragStart() {
-  dragStartIndex = +this.closest('li').getAttribute('data-index');
+function dragStart(e) {
+  dragStartIndex = +e.target.closest('li').dataset.index;
 }
 
-function dragDrop() {
-  const dragEndIndex = +this.getAttribute('data-index');
+function dragDrop(e) {
+  const dragEndIndex = +e.target.closest('li').dataset.index;
   // Swap the items
   swap(dragStartIndex, dragEndIndex);
-  this.classList.remove('over');
+  this.classList.remove("over");
 }
 
 function dragOver(e) {
@@ -89,9 +94,8 @@ function dragOver(e) {
 }
 
 function swap(fromIndex, toIndex) {
-
-  const itemOne = listItems[fromIndex].querySelector('.draggable');
-  const itemTwo = listItems[toIndex].querySelector('.draggable');
+  const itemOne = listItems[fromIndex].querySelector(".draggable");
+  const itemTwo = listItems[toIndex].querySelector(".draggable");
 
   listItems[fromIndex].appendChild(itemTwo);
   listItems[toIndex].appendChild(itemOne);
@@ -101,14 +105,14 @@ check.addEventListener("click", checkOrder);
 
 function checkOrder() {
   listItems.forEach((listItem, index) => {
-    const personName = listItem.querySelector('.draggable').innerText.trim();
+    const personName = listItem.querySelector(".draggable").innerText.trim();
 
-    if(personName !== richestPeople[index]) {
+    if (personName !== richestPeople[index]) {
       // it's in the wrong spot
-      listItem.classList.add('wrong');
+      listItem.classList.add("wrong");
     } else {
-      listItem.classList.remove('wrong');
-      listItem.classList.add('right');
+      listItem.classList.remove("wrong");
+      listItem.classList.add("right");
     }
-  })
+  });
 }
